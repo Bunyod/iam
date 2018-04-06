@@ -1,50 +1,109 @@
-name := """IAM"""
+organization in ThisBuild := "mdpm"
 
-organization := "de.safeplace"
+version in ThisBuild := "1.0-SNAPSHOT"
 
-version := "1.0-SNAPSHOT"
+scalaVersion in ThisBuild := "2.12.4"
+
+def commonSettings: Seq[Setting[_]] = Seq(
+  // API docs:
+  autoAPIMappings := true,
+  scalacOptions in (Compile, doc) ++= Seq(
+    "-doc-title", name.value,
+    "-diagrams",
+    "-diagrams-dot-path", "/usr/local/bin/dot"
+    // "-diagrams-dot-timeout", "20", "-diagrams-debug",
+  )
+)
 
 lazy val root = (project in file("."))
-  .enablePlugins(PlayScala)
-  .settings(libraryDependencies -= "com.typesafe.play" %% "play-test" % play.core.PlayVersion.current % "test")
+  .settings(name := "IAM")
+  .settings(commonSettings: _*)
+  .aggregate(
+    `iam-api`, `iam-impl`
+  )
 
-scalaVersion := "2.12.4"
+//*********************************************************************************************************************
+// LIBRARIES
+//*********************************************************************************************************************
 
-// Setup
-// ~~~
-/* `guice` resolves to 'com.typesafe.play:play-guice:play.core.PlayVersion.current' (cf. `play.sbt.PlayImport`) */
-libraryDependencies += guice
-/* Imported by `guice` or `play-test`. In order to totally remove `guice`, remove `play-guice` and `play-test`.
-   The latter is auto-imported by `PlayScala` (cf. `play.sbt.PlaySettings`) */
-//libraryDependencies += "com.google.inject" % "guice" % "4.1.0"
-libraryDependencies += "net.codingwell" %% "scala-guice" % "4.1.1"
+val jsonExtra     = "org.julienrf"             %% "play-json-derived-codecs" % "4.0.0"
+val scalaz        = "org.scalaz"               %% "scalaz-core"              % "7.2.20"
+val macwire       = "com.softwaremill.macwire" %% "macros"                   % "2.3.0" % "provided"
+val scalaTest     = "org.scalatest"            %% "scalatest"                % "3.0.4" % Test
 
-// Security
-// ~~~
-libraryDependencies += "com.mohiva" %% "play-silhouette"                 % "5.0.0"
-libraryDependencies += "com.mohiva" %% "play-silhouette-password-bcrypt" % "5.0.0"
-libraryDependencies += "com.mohiva" %% "play-silhouette-crypto-jca"      % "5.0.0"
-libraryDependencies += "com.mohiva" %% "play-silhouette-persistence"     % "5.0.0"
+//*********************************************************************************************************************
+// CASSANDRA
+//*********************************************************************************************************************
 
-// Database
-// ~~~
-libraryDependencies += jdbc
-libraryDependencies += evolutions
-libraryDependencies += "org.playframework.anorm" %% "anorm"                % "2.6.0"
-libraryDependencies += "mysql"                    % "mysql-connector-java" % "6.0.6"
+lagomCassandraPort in ThisBuild := 4000
 
-// Web
-// ~~~
-libraryDependencies += "org.webjars" % "jquery" % "3.3.1"
+// cf. `./cleanup-kafka.sh`
+lagomCassandraCleanOnStart in ThisBuild := false
 
-// Testing
-// ~~~
-//libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % Test
+//lagomCassandraYamlFile in ThisBuild := Some((baseDirectory in ThisBuild).value / "project" / "cassandra.yaml")
 
-// avoid warnings about dependency version conflicts
-dependencyOverrides ++= Seq(
-  "com.google.guava"         % "guava" % "22.0"
-, "com.typesafe.akka"        % "akka-stream_2.12" % "2.5.8"
-, "com.typesafe.akka"        % "akka-actor_2.12" % "2.5.8"
-, "com.google.code.findbugs" % "jsr305" % "2.0.1"
-)
+//lagomCassandraJvmOptions in ThisBuild := Seq("-Xms256m", "-Xmx1024m", "-Dcassandra.jmx.local.port=4099") // these are actually the default jvm options
+
+//lagomCassandraEnabled in ThisBuild := false
+//lagomUnmanagedServices in ThisBuild := Map("cas_native" -> "http://localhost:9042")
+
+//*********************************************************************************************************************
+// KAFKA
+//*********************************************************************************************************************
+
+lagomKafkaPort in ThisBuild := 9092
+lagomKafkaZookeeperPort in ThisBuild := 2181
+
+//lagomKafkaPropertiesFile in ThisBuild := Some((baseDirectory in ThisBuild).value / "project" / "kafka-server.properties")
+
+//lagomKafkaJvmOptions in ThisBuild := Seq("-Xms256m", "-Xmx1024m") // these are actually the default jvm options
+
+//lagomKafkaEnabled in ThisBuild := false
+//lagomKafkaAddress in ThisBuild := "localhost:10000"
+
+//*********************************************************************************************************************
+// µSes
+//*********************************************************************************************************************
+
+// Identity and access management µS {{{1
+lazy val `iam-api` = (project in file("iam-api"))
+  .settings(commonSettings: _*)
+  .settings(
+    version              := "1.0-SNAPSHOT",
+    libraryDependencies ++= Seq(
+      lagomScaladslApi,
+      jsonExtra
+    )
+  )
+
+lazy val `iam-impl` = (project in file("iam-impl"))
+  .enablePlugins(LagomScala)
+  .dependsOn(`iam-api`)
+  .settings(commonSettings: _*)
+  .settings(lagomForkedTestSettings: _*)
+  .settings(
+    version              := "1.0-SNAPSHOT",
+    libraryDependencies ++= Seq(
+      lagomScaladslPersistenceCassandra,
+      //lagomScaladslKafkaBroker,
+      macwire,
+      jsonExtra,
+      lagomScaladslTestKit,
+      scalaTest
+    ),
+    dependencyOverrides ++= Seq(
+      "com.github.jnr"     % "jnr-constants"   % "0.9.9",
+      //"io.netty"           % "netty"           % "3.10.6.Final",
+      "io.netty"           % "netty-handler"   % "4.1.22.Final",
+      ////"io.netty"           % "netty-codec"     % "4.1.22.Final",
+      ////"io.netty"           % "netty-transport" % "4.1.22.Final",
+      ////"io.netty"           % "netty-resolver"  % "4.1.22.Final",
+      ////"io.netty"           % "netty-buffer"    % "4.1.22.Final",
+      ////"io.netty"           % "netty-common"    % "4.1.22.Final",
+      "com.google.guava"   % "guava"           % "22.0",
+      "com.typesafe.akka" %% "akka-stream"     % "2.5.11",
+      "com.typesafe.akka" %% "akka-actor"      % "2.5.11"
+    )
+  )
+
+// vim: fdm=marker
