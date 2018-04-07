@@ -24,11 +24,11 @@ object IamState {
 /** A user. */
 case class User(
   username: api.EMail,
+  status  : Status,
   forename: Option[String] = None,
   surname : Option[String] = None,
   password: Option[String] = None,
-  role    : Option[Role]   = None,
-  status  : Status
+  role    : Option[Role]   = None
 )
 
 object User {
