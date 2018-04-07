@@ -1,11 +1,13 @@
 package mdpm
 package iam.impl
 
+import java.util.UUID
 import scala.collection.immutable.Seq
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
 import org.slf4j.LoggerFactory
 import mdpm.iam.api
+import java.time.{Duration, Instant}
 
 /**
  * This is an event sourced entity with [[IamState]] state.
@@ -40,77 +42,32 @@ class IamEntity() extends PersistentEntity {
   override type Event = IamEvent
   override type State = IamState
 
-  override def initialState = IamState(None)
+  override val initialState = IamState(None)
 
   private val logger = LoggerFactory.getLogger(classOf[IamEntity])
 
   // @formatter:off
-  override def behavior: Behavior = {
-    case IamState(None      , ts) => doStage
-    case IamState(Some(user), ts) => doWarn orElse doRegister
-  }
+  override def behavior: Behavior = stage orElse register
+//  override def behavior: Behavior = {
+//    case IamState(None      , ts) => stage
+//    case IamState(Some(user), ts) => stage orElse register //warn orElse register
+//  }
   // @formatter:on
 
   // ******************************************************************************************************************
   // Actions
   // ******************************************************************************************************************
 
-  private val doStage = Actions()
-    .onCommand[StageUser,api.Result] { stage }
-    .onEvent                         { staged }
-
-  private val doWarn = Actions()
-    .onCommand[StageUser,api.Result] { warn }
-
-  private val doRegister = Actions.empty
-
-  // ******************************************************************************************************************
-  // Command handlers
-  // ******************************************************************************************************************
-
-  // === State modifying (write commands)
-  // Such a command is a request for the system
-  // to perform an action that changes the state of the system
-
-  // Results in [[UserStaged]] event; Cf. [[staged]]
-  def stage: PartialFunction[(Command, CommandContext[api.Result], State), Persist] = {
-    case (StageUser(username), ctx, state) => ctx.thenPersist(UserStaged(username)) { _ =>
-      ctx.reply(api.Result(
-        `type`  = api.Result.Info,
-        subject = Some(s"User '${username}' was successfully staged on ${tsF.format(state.timestamp)}.")
-      ))
+  private val stage = Actions()
+    .onCommand[StageUser,MailToken] {
+      case (StageUser(username), ctx, _) =>
+        ctx.thenPersist(UserStaged(username)) { event => ctx.reply(event.token) }
     }
-  }
-
-  // === Non-state modifying (query commands)
-
-  def warn: PartialFunction[(Command, CommandContext[api.Result], State), Persist] = {
-    case (StageUser(username), ctx, IamState(Some(user), ts)) => user.status match {
-
-      case Staged   =>
-        ctx.reply(api.Result(
-          `type`  = api.Result.Warn,
-           subject = Some(s"User '${username}' has already been staged at ${tsF.format(ts)}."),
-           details = Some("Note that no new e-mail has been sent for registration.")
-        ))
-        ctx.done
-
-      case Active   => ???
-      case Inactive => ???
+    .onEvent { case (UserStaged(username, ts), _) =>
+      IamState(Some(User(username, Staged)))
     }
-  }
 
-  // ******************************************************************************************************************
-  // Event handlers
-  // ******************************************************************************************************************
-
-  // Note: Event handlers are used both for persisting and replaying events.
-
-  def staged: PartialFunction[(Event, State), State] = {
-    case (UserStaged(u, ts), state) =>
-      logger.debug(s"User '${u}' successfully staged on ${tsF.format(ts)}.")
-      IamState(Some(User(username = u, status = Staged)))
-  }
+  private val register = Actions.empty
 
 }
 
