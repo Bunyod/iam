@@ -1,0 +1,22 @@
+
+SELECT
+	persistence_id,
+	partition_nr,
+	sequence_nr,
+	dateOf(timestamp),
+	timebucket,
+	used,
+	event,
+	event_manifest,
+	message,
+	meta,
+	meta_ser_id,
+	meta_ser_manifest,
+	ser_id,
+	ser_manifest,
+	tag1,
+	tag2,
+	tag3,
+	writer_uuid
+FROM
+	iam.messages;
