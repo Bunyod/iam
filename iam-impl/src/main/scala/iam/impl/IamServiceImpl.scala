@@ -5,11 +5,14 @@ import scala.concurrent.ExecutionContext
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
 import org.slf4j.LoggerFactory
+import play.api.libs.mailer._
 import mdpm.iam.api
-import mdpm.iam.api.Result.{Info, Warn}
 
 /** Implementation of the IAM µS. */
-class IamServiceImpl(registry: PersistentEntityRegistry)(implicit ec: ExecutionContext) extends api.IamService {
+class IamServiceImpl(
+  registry: PersistentEntityRegistry,
+  mailer:   MailerClient
+)(implicit ec: ExecutionContext) extends api.IamService {
 
   private val logger = LoggerFactory.getLogger(classOf[IamServiceImpl])
 
@@ -19,7 +22,6 @@ class IamServiceImpl(registry: PersistentEntityRegistry)(implicit ec: ExecutionC
 
   override val signup: ServiceCall[api.Signup, api.Result] = ServiceCall { request =>
     registry.refFor[IamEntity](request.username).ask(StageUser(request.username)) map { token =>
-      // TODO Actually at this point I'd like to retrieve the current state of [[IamEntity]]
 
       //      result.`type` match {
       //        case Info => createToken(request.username) map { token =>

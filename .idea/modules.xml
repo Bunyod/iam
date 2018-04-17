@@ -2,8 +2,12 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iam.iml" filepath="$PROJECT_DIR$/.idea/modules/iam.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iam-build.iml" filepath="$PROJECT_DIR$/.idea/modules/iam-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iam-api.iml" filepath="$PROJECT_DIR$/.idea/modules/iam-api.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iam-api-build.iml" filepath="$PROJECT_DIR$/.idea/modules/iam-api-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iam-impl.iml" filepath="$PROJECT_DIR$/.idea/modules/iam-impl.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iam-impl-build.iml" filepath="$PROJECT_DIR$/.idea/modules/iam-impl-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/root.iml" filepath="$PROJECT_DIR$/.idea/modules/root.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/root-build.iml" filepath="$PROJECT_DIR$/.idea/modules/root-build.iml" />
     </modules>
   </component>
 </project>

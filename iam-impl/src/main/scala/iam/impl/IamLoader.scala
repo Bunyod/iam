@@ -1,6 +1,7 @@
 package mdpm
 package iam.impl
 
+import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import com.lightbend.lagom.scaladsl.api.ServiceLocator
 import com.lightbend.lagom.scaladsl.api.ServiceLocator.NoServiceLocator
@@ -27,7 +28,8 @@ class IamLoader extends LagomApplicationLoader {
 abstract class IamApplication(context: LagomApplicationContext)
   extends LagomApplication(context)
      with CassandraPersistenceComponents
-     with AhcWSComponents {
+     with AhcWSComponents
+     with MailerComponents {
 
   // Bind the service that this server provides
   override lazy val lagomServer = serverFor[IamService](wire[IamServiceImpl])
