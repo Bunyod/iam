@@ -1,6 +1,7 @@
 package mdpm
 package iam.impl
 
+import java.time.Instant
 import play.api.libs.json._
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity.ReplyType
 import mdpm.iam.api
@@ -21,7 +22,7 @@ sealed trait IamCommand [R] extends ReplyType[R]
  */
 case class StageUser(
   username: api.EMail
-) extends IamCommand[MailToken]
+) extends IamCommand[(MailToken,Instant)]
 
 object StageUser {
   implicit val format: Format[StageUser] = Json.format

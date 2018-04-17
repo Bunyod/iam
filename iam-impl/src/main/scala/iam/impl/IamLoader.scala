@@ -25,6 +25,8 @@ class IamLoader extends LagomApplicationLoader {
 
 }
 
+// Note: [[MailerComponents#config]] is fulfilled by [[LagomApplication]] and
+// [[LagomConfigComponent]], in partiular.
 abstract class IamApplication(context: LagomApplicationContext)
   extends LagomApplication(context)
      with CassandraPersistenceComponents
