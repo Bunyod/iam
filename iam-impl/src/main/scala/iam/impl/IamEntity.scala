@@ -59,9 +59,9 @@ class IamEntity() extends PersistentEntity {
   // ******************************************************************************************************************
 
   private val stage = Actions()
-    .onCommand[StageUser,MailToken] {
+    .onCommand[StageUser,(MailToken,Instant)] {
       case (StageUser(username), ctx, _) =>
-        ctx.thenPersist(UserStaged(username)) { event => ctx.reply(event.token) }
+        ctx.thenPersist(UserStaged(username)) { event => ctx.reply((event.token,event.timestamp)) }
     }
     .onEvent { case (UserStaged(username, ts), _) =>
       IamState(Some(User(username, Staged)))

@@ -17,7 +17,7 @@ object IamEvent {
 
 case class UserStaged(
   username : api.EMail,
-  timestamp: Instant   = Instant.now()
+  timestamp: Instant  = Instant.now()
 ) extends IamEvent {
   val token = MailToken(UUID.randomUUID().toString, timestamp.plus(Duration.ofMinutes(10)))
 }
