@@ -14,9 +14,9 @@ case class User(
   role    : Option[Role]   = None
 )
 
-object User {
-  implicit val format: Format[User] = Json.format
-}
+//object User {
+//  implicit val format: Format[User] = Json.format
+//}
 
 // ********************************************************************************************************************
 // USER ROLE

@@ -17,12 +17,13 @@ class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) {
   private[es] var iamStatement: PreparedStatement = _
 
   // create the tables used by the read side processor
+  // TODO Add `mailtoken tuple<string,timestamp>`
   def createTable(): Future[Done] = {
     session.executeCreateTable(
       """
         |CREATE TABLE IF NOT EXISTS usertable(
-        |username  text PRIMARY KEY,
-        |timestamp timestamp       ,
+        |username  text PRIMARY KEY        ,
+        |timestamp timestamp               ,
         |status    int
         |);
       """.stripMargin)
