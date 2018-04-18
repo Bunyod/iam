@@ -17,14 +17,17 @@ import mdpm.iam.impl.es.{IamState, StageUser, UserStaged}
 object IamSerializerRegistry extends JsonSerializerRegistry {
 
   override def serializers: Seq[JsonSerializer[_]] = Seq(
-    // model
-    JsonSerializer[User],
-    // commands
-    JsonSerializer[StageUser],
-    // events
+    // === Model
+    // TODO Required?
+    //JsonSerializer[User],
+    // === Commands
+    // TODO Required?
+    //JsonSerializer[StageUser],
+    // === Events
     JsonSerializer[UserStaged],
-    // state
-    JsonSerializer[IamState]
+    // === State
+    // TODO Required?
+    //JsonSerializer[IamState]
   )
 
 }

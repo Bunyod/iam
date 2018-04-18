@@ -22,9 +22,11 @@ case class UserStaged(
   timestamp: Instant  = Instant.now()
 ) extends IamEvent {
 
+  /* NOTE: Not persisted in event store. In case of a replay the tokens are most like to be outdated.
+           The read-side, however, persists those mail tokens. */
   val token = MailToken(UUID.randomUUID().toString, timestamp.plus(Duration.ofMinutes(10)))
 
-  override val toString = s"UserStaged(${username}, ${tsF.format(timestamp)})"
+  override val toString = s"UserStaged(${username}, ${tsF.format(timestamp)}, $token)"
 
 }
 

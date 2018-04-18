@@ -13,7 +13,7 @@ case class IamState(
   override val toString = s"IamState(${user}, ${tsF.format(timestamp)})"
 }
 
-object IamState {
-  implicit val format: Format[IamState] = Json.format
-}
+//object IamState {
+//  implicit val format: Format[IamState] = Json.format
+//}
 
