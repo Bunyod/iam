@@ -1,5 +1,6 @@
 package mdpm
 package iam.impl
+package svc
 
 import scala.concurrent.ExecutionContext
 import com.lightbend.lagom.scaladsl.api.ServiceCall
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory
 import play.api.libs.mailer._
 import mdpm.iam.api
 import mdpm.iam.api.Result.Info
+import mdpm.iam.impl.es.{IamEntity, StageUser}
 
 /** Implementation of the IAM µS. */
 class IamServiceImpl(

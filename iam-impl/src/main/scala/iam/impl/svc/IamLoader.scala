@@ -1,5 +1,6 @@
 package mdpm
 package iam.impl
+package svc
 
 import play.api.libs.mailer.MailerComponents
 import play.api.libs.ws.ahc.AhcWSComponents
@@ -10,6 +11,7 @@ import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraPersistenceCo
 import com.lightbend.lagom.scaladsl.server._
 import com.softwaremill.macwire._
 import mdpm.iam.api.IamService
+import mdpm.iam.impl.es.{IamEntity, IamProcessor, IamRepository}
 
 class IamLoader extends LagomApplicationLoader {
 
@@ -36,10 +38,15 @@ abstract class IamApplication(context: LagomApplicationContext)
   // Bind the service that this server provides
   override lazy val lagomServer = serverFor[IamService](wire[IamServiceImpl])
 
+  // Register the JSON serializer registry
+  override lazy val jsonSerializerRegistry = IamSerializerRegistry
+
   // Register the IAM µS persistent entity
   persistentEntityRegistry.register(wire[IamEntity])
 
-  // Register the JSON serializer registry
-  override lazy val jsonSerializerRegistry = IamSerializerRegistry
+  lazy val repository: IamRepository = wire[IamRepository]
+
+  // Register the read side processor persistent entity
+  readSide.register(wire[IamProcessor])
 
 }

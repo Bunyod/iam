@@ -11,7 +11,7 @@ package object impl {
   // Cf. https://stackoverflow.com/a/27483371/540718
   val tsF = DateTimeFormatter
     .ofLocalizedDateTime(FormatStyle.FULL)
-    .withLocale(Locale.ENGLISH)
+    .withLocale(Locale.GERMANY)
     .withZone(ZoneId.systemDefault())
 
 
