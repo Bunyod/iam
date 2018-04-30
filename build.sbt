@@ -26,12 +26,12 @@ lazy val root = (project in file("."))
 // LIBRARIES
 //*********************************************************************************************************************
 
-val jsonExtra     = "org.julienrf"             %% "play-json-derived-codecs" % "4.0.0"
-val scalaz        = "org.scalaz"               %% "scalaz-core"              % "7.2.20"
-val mailer        = "com.typesafe.play"        %% "play-mailer"              % "6.0.1"
-val macwire       = "com.softwaremill.macwire" %% "macros"                   % "2.3.0" % "provided"
-
-val scalaTest     = "org.scalatest"            %% "scalatest"                % "3.0.4" % Test
+val jsonExtra     = "org.julienrf"               %% "play-json-derived-codecs" % "4.0.0"
+val playMailer    = "com.typesafe.play" %% "play-mailer" % "6.0.1"
+val macwire       = "com.softwaremill.macwire"   %% "macros"                   % "2.3.0" % "provided"
+val scalaLogging  = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
+//val scalaz        = "org.scalaz"                 %% "scalaz-core"              % "7.2.20"
+val scalaTest     = "org.scalatest"              %% "scalatest"                % "3.0.4" % Test
 
 //*********************************************************************************************************************
 // CASSANDRA
@@ -90,7 +90,8 @@ lazy val `iam-impl` = (project in file("iam-impl"))
       //lagomScaladslKafkaBroker,
       macwire,
       jsonExtra,
-      mailer,
+      playMailer,
+      scalaLogging,
       lagomScaladslTestKit,
       scalaTest
     ),

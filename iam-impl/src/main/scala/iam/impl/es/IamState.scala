@@ -3,7 +3,6 @@ package iam.impl
 package es
 
 import java.time.Instant
-import play.api.libs.json._
 
 /** The current state held by the persistent entity. */
 case class IamState(

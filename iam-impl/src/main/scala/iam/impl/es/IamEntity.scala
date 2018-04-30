@@ -2,9 +2,10 @@ package mdpm
 package iam.impl
 package es
 
+import java.time.{Duration, Instant}
+import java.util.UUID
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
-import org.slf4j.LoggerFactory
-import java.time.Instant
+import com.typesafe.scalalogging.StrictLogging
 
 /**
  * This is an event sourced entity with [[IamState]] state.
@@ -33,7 +34,7 @@ import java.time.Instant
  * - ...
  *
  */
-class IamEntity() extends PersistentEntity {
+class IamEntity() extends PersistentEntity with StrictLogging {
 
   override type Command = IamCommand[_]
   override type Event = IamEvent
@@ -41,30 +42,20 @@ class IamEntity() extends PersistentEntity {
 
   override val initialState = IamState(None)
 
-  private val logger = LoggerFactory.getLogger(classOf[IamEntity])
-
-  // @formatter:off
   override def behavior: Behavior = stage orElse register
-//  override def behavior: Behavior = {
-//    case IamState(None      , ts) => stage
-//    case IamState(Some(user), ts) => stage orElse register //warn orElse register
-//  }
-  // @formatter:on
-
-  // ******************************************************************************************************************
-  // Actions
-  // ******************************************************************************************************************
 
   private val stage = Actions()
-    .onCommand[StageUser,(MailToken,Instant)] {
+    .onCommand[StageUser, MailToken] {
       case (StageUser(username), ctx, _) =>
-        ctx.thenPersist(UserStaged(username)) { event => ctx.reply((event.token,event.timestamp)) }
+        val token = MailToken(UUID.randomUUID().toString, Instant.now().plus(MailToken.DURATION))
+        val event = UserStaged(username, token)
+        ctx.thenPersist(event) { e => ctx.reply(e.token) }
     }
-    .onEvent { case (UserStaged(username, ts), _) =>
-      IamState(Some(User(username, Staged)))
+    .onEvent {
+      case (UserStaged(username, token), _) =>
+        IamState(Some(User(username, Staged, password = Some(Left(token)))))
     }
 
   private val register = Actions.empty
 
 }
-

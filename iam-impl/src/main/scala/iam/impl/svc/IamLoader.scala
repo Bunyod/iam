@@ -36,6 +36,7 @@ abstract class IamApplication(context: LagomApplicationContext)
      with MailerComponents {
 
   // Bind the service that this server provides
+  // LagomApplication#LagomServerComponents#lagomServer
   override lazy val lagomServer = serverFor[IamService](wire[IamServiceImpl])
 
   // Register the JSON serializer registry

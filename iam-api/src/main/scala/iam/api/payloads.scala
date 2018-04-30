@@ -60,7 +60,7 @@ object Result {
 
   import play.api.libs.json._
 
-  // TODO Improve serialization of `api.Result`!
+  // TODO Re-asses serialization of `api.Result`!
   object Type {
     implicit val writes = new Writes[Type] {
       def writes(t: Type) = t match {

@@ -6,25 +6,27 @@ import java.util.Date
 import scala.concurrent.{ExecutionContext, Future}
 import akka.Done
 import com.lightbend.lagom.scaladsl.persistence.cassandra.CassandraSession
-import com.datastax.driver.core.{BoundStatement, PreparedStatement}
-import org.slf4j.LoggerFactory
+import com.datastax.driver.core._
+import com.typesafe.scalalogging.StrictLogging
 import mdpm.iam.api
 
-class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) {
-
-  private val logger = LoggerFactory.getLogger(classOf[IamRepository])
+class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) extends StrictLogging {
 
   private[es] var iamStatement: PreparedStatement = _
 
   // create the tables used by the read side processor
-  // TODO Add `mailtoken tuple<string,timestamp>`
   def createTable(): Future[Done] = {
     session.executeCreateTable(
       """
-        |CREATE TABLE IF NOT EXISTS usertable(
-        |username  text PRIMARY KEY        ,
-        |timestamp timestamp               ,
-        |status    int
+        |-- User `username` has been staged on `timestamp`
+        |-- with email token `stamp._1` which expires
+        |-- on `stamp._2`.
+        |
+        |CREATE TABLE IF NOT EXISTS staged(
+        |username    text,
+        |"timestamp" timestamp,
+        |"token"     tuple<text,timestamp>,
+        |PRIMARY KEY (username)
         |);
       """.stripMargin)
 
@@ -38,7 +40,7 @@ class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) {
   def createPreparedStatements: Future[Done] =
     session.prepare(
       """
-        |INSERT INTO usertable(username, timestamp, status)
+        |INSERT INTO staged(username, "timestamp", "token")
         |VALUES (?, ?, ?)
       """.stripMargin
     ) map { iamPreparedStatement =>
@@ -46,31 +48,35 @@ class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) {
       Done
     }
 
-  def stageUser(e: UserStaged): Future[List[BoundStatement]] = {
-    logger.debug(s"Read-side: Staging user (Event: $e)")
+  def stageUser(e: UserStaged): Future[List[BoundStatement]] =
+    session.underlying().map { _session =>
+      logger.debug(s"Read-side: Staging user (Event: $e)")
 
-    val iamBindStatement = iamStatement.bind()
+      val iamBindStatement = iamStatement.bind()
+      val cluster = _session.getCluster
+      val tupleType = cluster.getMetadata.newTupleType(DataType.text(), DataType.timestamp())
 
-    iamBindStatement.setString("username", e.username)
-    iamBindStatement.setTimestamp("timestamp", Date.from(e.timestamp))
-    iamBindStatement.setInt("status", 0)
+      iamBindStatement.setString("username", e.username)
+      iamBindStatement.setTimestamp("timestamp", Date.from(e.token.expiration.minus(MailToken.DURATION)))
+      iamBindStatement.setTupleValue("token", tupleType.newValue(e.token.uuid, Date.from(e.token.expiration)))
 
-    Future.successful(List(iamBindStatement))
-  }
+      List(iamBindStatement)
+    }
 
   def getUser(username: api.EMail): Future[Option[User]] =
     session.selectOne(
-      s"SELECT * FROM usertable WHERE username = '$username'"
+      s"""
+         |SELECT * FROM staged
+         | WHERE username = '$username'
+       """.stripMargin
     ) map { _ map { row =>
-        val username = row.getString("username")
-        val timestamp = row.getDate("timestamp")
-        val status = row.getInt("status") match {
-          case 0 => Staged
-          case 1 => Active
-          case _ => Inactive
-        }
-        User(username, status)
-      }
-    }
+      val username = row.getString("username")
+      val timestamp = row.getTimestamp("timestamp")
+      val tupleValue = row.getTupleValue("token")
+      val token = tupleValue.getString(0)
+      val expiration = tupleValue.getTimestamp(1).toInstant
+      logger.debug(s"User(username = $username, token = ($token, ${tsF.format(expiration)}))")
+      User(username, Staged, password = Some(Left(MailToken(token, expiration))))
+    } }
 
 }
