@@ -13,8 +13,9 @@
     <appender-ref ref="STDOUT" />
   </appender>
 
-  <logger name="mdpm.iam.impl.es.IamEntity"     level="DEBUG" />
-  <logger name="mdpm.iam.impl.es.IamRepository" level="DEBUG" />
+  <logger name="mdpm.iam.impl.es.IamEntity"       level="DEBUG" />
+  <logger name="mdpm.iam.impl.es.IamRepository"   level="DEBUG" />
+  <logger name="mdpm.iam.impl.svc.IamServiceImpl" level="DEBUG" />
 
   <logger name="play"                    level="INFO" />
   <logger name="akka"                    level="INFO" />
