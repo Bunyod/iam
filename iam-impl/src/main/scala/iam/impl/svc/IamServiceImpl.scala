@@ -2,16 +2,20 @@ package mdpm
 package iam.impl
 package svc
 
+import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.ServiceCall
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntityRegistry
+import com.lightbend.lagom.scaladsl.server.ServerServiceCall
 import com.typesafe.scalalogging.StrictLogging
 import mdpm.iam.api
 import mdpm.iam.api.Result.Info
 import mdpm.iam.api.{Register, Result}
 import mdpm.iam.impl.es._
 import mdpm.iam.impl.util.JwtTokenUtil
+import mdpm.iam.impl.util.SimpleAuth._
 import mdpm.iam.impl.util.ValidationUtil._
 import play.api.libs.mailer._
+import play.api.mvc.Request
 
 import scala.concurrent.ExecutionContext
 
@@ -83,7 +87,21 @@ class IamServiceImpl(
     * }}}
     * @return A [[Result]] of type [[Result.Info]], [[Result.Warn]], or [[Result.Error]].
     */
-  override def getUserInfo: ServiceCall[Register, Result] = ???
+  override def getUserInfo() = authenticated { (tokenContent, _) =>
+    ServerServiceCall { _ =>
+//      val ref = registry.refFor[IamEntity](tokenContent.username)
+//      ref.ask(GetUserInfo).map { userInfo =>
+//        api.Result(Info, Some(s"User successfully authorized"), Some(userInfo.toString))
+//      }
+      iamRepository.getUser(tokenContent.username).map {
+        case None =>
+          api.Result(Info, Some(s"User not found"), Some(tokenContent.toString))
+        case Some(user) =>
+          api.Result(Info, Some(s"User successfully authorized"), Some(user.toString))
+      }
+
+    }
+  }
 
 }
 
