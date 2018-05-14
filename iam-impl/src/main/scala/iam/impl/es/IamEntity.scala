@@ -2,10 +2,9 @@ package mdpm
 package iam.impl
 package es
 
-import java.time.{Duration, Instant}
-import java.util.UUID
 import com.lightbend.lagom.scaladsl.persistence.PersistentEntity
 import com.typesafe.scalalogging.StrictLogging
+import mdpm.iam.impl.util.JwtTokenUtil
 
 /**
  * This is an event sourced entity with [[IamState]] state.
@@ -45,17 +44,30 @@ class IamEntity() extends PersistentEntity with StrictLogging {
   override def behavior: Behavior = stage orElse register
 
   private val stage = Actions()
-    .onCommand[StageUser, MailToken] {
-      case (StageUser(username), ctx, _) =>
-        val token = MailToken(UUID.randomUUID().toString, Instant.now().plus(MailToken.DURATION))
-        val event = UserStaged(username, token)
-        ctx.thenPersist(event) { e => ctx.reply(e.token) }
+    .onCommand[StageUser, UserToken] {
+    case (su @ StageUser(username), ctx, _) =>
+      val token = JwtTokenUtil.generateAuthToken(su)
+      val userToken = UserToken(token)
+      val event = UserStagedEvt(username, userToken)
+      ctx.thenPersist(event) { _ => ctx.reply(userToken) }
     }
     .onEvent {
-      case (UserStaged(username, token), _) =>
-        IamState(Some(User(username, Staged, password = Some(Left(token)))))
+      case (UserStagedEvt(username, _), _) =>
+        IamState(Some(User(username, Staged, password = None)))
     }
 
-  private val register = Actions.empty
+  private val register = Actions()
+    .onCommand[RegisterUser, UserToken] {
+    case (RegisterUser(forename, surname, password, username), ctx, _) =>
+      val user = User(username, Active, forename = Some(forename), surname = Some(surname), password = Some(Right(password)))
+      val token = JwtTokenUtil.generateUserToken(user)
+      val userToken = UserToken(token)
+      val event = UserRegisteredEvt(user, userToken)
+      ctx.thenPersist(event) { _ => ctx.reply(userToken) }
+    }
+    .onEvent {
+      case (UserRegisteredEvt(user, _), _) =>
+        IamState(Some(user))
+    }
 
 }

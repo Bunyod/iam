@@ -27,11 +27,13 @@ lazy val root = (project in file("."))
 //*********************************************************************************************************************
 
 val jsonExtra     = "org.julienrf"               %% "play-json-derived-codecs" % "4.0.0"
-val playMailer    = "com.typesafe.play" %% "play-mailer" % "6.0.1"
+val playMailer    = "com.typesafe.play"          %% "play-mailer"              % "6.0.1"
 val macwire       = "com.softwaremill.macwire"   %% "macros"                   % "2.3.0" % "provided"
-val scalaLogging  = "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0"
+val scalaLogging  = "com.typesafe.scala-logging" %% "scala-logging"            % "3.9.0"
 //val scalaz        = "org.scalaz"                 %% "scalaz-core"              % "7.2.20"
 val scalaTest     = "org.scalatest"              %% "scalatest"                % "3.0.4" % Test
+val playJWT       = "com.pauldijou"              %% "jwt-play-json"            % "0.16.0"
+val scalaJWT      = "com.pauldijou"              %% "jwt-core"                 % "0.16.0"
 
 //*********************************************************************************************************************
 // CASSANDRA
@@ -92,6 +94,8 @@ lazy val `iam-impl` = (project in file("iam-impl"))
       jsonExtra,
       playMailer,
       scalaLogging,
+      playJWT,
+      scalaJWT,
       lagomScaladslTestKit,
       scalaTest
     ),
@@ -104,9 +108,9 @@ lazy val `iam-impl` = (project in file("iam-impl"))
       ////"io.netty"           % "netty-resolver"  % "4.1.22.Final",
       ////"io.netty"           % "netty-buffer"    % "4.1.22.Final",
       ////"io.netty"           % "netty-common"    % "4.1.22.Final",
-      "com.google.guava"   % "guava"           % "22.0",
-      "com.typesafe.akka" %% "akka-stream"     % "2.5.11",
-      "com.typesafe.akka" %% "akka-actor"      % "2.5.11"
+      "com.google.guava"   % "guava"            % "22.0",
+      "com.typesafe.akka"  %% "akka-stream"     % "2.5.11",
+      "com.typesafe.akka"  %% "akka-actor"      % "2.5.11"
     )
   )
 
