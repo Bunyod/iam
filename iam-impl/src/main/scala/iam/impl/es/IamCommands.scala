@@ -10,6 +10,7 @@ sealed trait IamCommand [R] extends ReplyType[R]
 
 case class StageUser(username: api.EMail) extends IamCommand[UserToken]
 case class RegisterUser(forename: String, surname : String, password : String, username: String) extends IamCommand[UserToken]
+case object GetUserInfo extends IamCommand[UserToken]
 
 object StageUser {
   implicit val format: Format[StageUser] = Json.format

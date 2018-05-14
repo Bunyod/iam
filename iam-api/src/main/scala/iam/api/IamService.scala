@@ -1,6 +1,7 @@
 package mdpm
 package iam.api
 
+import akka.NotUsed
 import com.lightbend.lagom.scaladsl.api.transport.Method
 import com.lightbend.lagom.scaladsl.api.{Descriptor, Service, ServiceCall}
 
@@ -85,6 +86,6 @@ trait IamService extends Service {
    *
    * @return A [[Result]] of type [[Result.Info]], [[Result.Warn]], or [[Result.Error]].
    */
-  def getUserInfo: ServiceCall[Register, Result]
+  def getUserInfo: ServiceCall[NotUsed, Result]
 
 }

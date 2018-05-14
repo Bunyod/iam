@@ -1,8 +1,9 @@
-package iam.impl.util
+package mdpm
+package iam.impl
+package util
 
 import com.lightbend.lagom.scaladsl.api.transport.{Forbidden, RequestHeader}
 import com.lightbend.lagom.scaladsl.server.ServerServiceCall
-import mdpm.iam.impl.UserInfo
 import mdpm.iam.impl.util.JwtTokenUtil._
 import mdpm.iam.impl.util.ValidationUtil._
 

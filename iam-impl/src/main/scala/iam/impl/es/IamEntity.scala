@@ -33,6 +33,7 @@ import mdpm.iam.impl.util.JwtTokenUtil
  * - ...
  *
  */
+
 class IamEntity() extends PersistentEntity with StrictLogging {
 
   override type Command = IamCommand[_]
@@ -41,7 +42,7 @@ class IamEntity() extends PersistentEntity with StrictLogging {
 
   override val initialState = IamState(None)
 
-  override def behavior: Behavior = stage orElse register
+  override def behavior: Behavior = stage orElse register //orElse userInfo
 
   private val stage = Actions()
     .onCommand[StageUser, UserToken] {
@@ -69,5 +70,22 @@ class IamEntity() extends PersistentEntity with StrictLogging {
       case (UserRegisteredEvt(user, _), _) =>
         IamState(Some(user))
     }
+
+//  private val userInfo = Actions()
+//    .onReadOnlyCommand[GetUserInfo, UserInfo] {
+//      case (GetUserInfo, ctx, state) =>
+//        state.user match {
+//          case None =>
+//            ctx.invalidCommand(s"Registered user with ${entityId} can't be found")
+//          case Some(user: User) =>
+//            ctx.reply(
+//              UserInfo(
+//                username = user.username,
+//                forename = user.forename,
+//                surname = user.surname
+//              )
+//            )
+//        }
+//    }
 
 }

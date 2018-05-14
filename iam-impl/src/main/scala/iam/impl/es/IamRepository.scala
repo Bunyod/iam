@@ -106,17 +106,19 @@ class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) ex
   def getUser(username: api.EMail): Future[Option[User]] =
     session.selectOne(
       s"""
-         |SELECT * FROM staged
+         |SELECT * FROM users
          | WHERE username = '$username'
        """.stripMargin
     ) map { _ map { row =>
       val username = row.getString("username")
       val timestamp = row.getTimestamp("u_timestamp")
-      val tupleValue = row.getTupleValue("u_token")
-      val token = tupleValue.getString(0)
-      val expiration = tupleValue.getTimestamp(1).toInstant
-      logger.debug(s"User(username = $username, token = ($token, ${tsF.format(expiration)}))")
-      User(username, Staged, password = None)
+      val forename = row.getString("forename")
+      val surname = row.getString("surname")
+//      val tupleValue = row.getTupleValue("u_token")
+//      val token = tupleValue.getString(0)
+//      val expiration = tupleValue.getTimestamp(1).toInstant
+      logger.debug(s"User(username = $username, forename=$forename)")
+      User(username, Staged, forename = Some(forename), surname = Some(surname), password = None)
     } }
 
   def updateUser(user: User, token: UserToken): Future[Done] = {
