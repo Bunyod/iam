@@ -6,7 +6,8 @@ import play.api.libs.json._
 
 case class MailToken(
   uuid      : String,
-  expiration: Instant
+  expiration: Instant,
+  username  : String
 ) {
 
   def isExpired: Boolean =

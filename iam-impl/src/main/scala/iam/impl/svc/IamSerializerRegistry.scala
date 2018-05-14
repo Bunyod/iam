@@ -2,9 +2,10 @@ package mdpm
 package iam.impl
 package svc
 
-import scala.collection.immutable.Seq
 import com.lightbend.lagom.scaladsl.playjson.{JsonSerializer, JsonSerializerRegistry}
-import mdpm.iam.impl.es.UserStaged
+import mdpm.iam.impl.es.{UserStaged, UserStagedEvt}
+
+import scala.collection.immutable.Seq
 
 /* Akka serialization, used by both persistence and remoting, needs to have
  * serializers registered for every type serialized or deserialized. While it's
@@ -25,6 +26,8 @@ object IamSerializerRegistry extends JsonSerializerRegistry {
     //JsonSerializer[StageUser],
     // === Events
     JsonSerializer[UserStaged],
+    JsonSerializer[UserStagedEvt]
+//    JsonSerializer[UserRegisteredEvt],
     // === State
     // TODO Required?
     //JsonSerializer[IamState]

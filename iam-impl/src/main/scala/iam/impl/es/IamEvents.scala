@@ -17,6 +17,17 @@ object IamEvent {
 
 case class UserStaged(username: api.EMail, token: MailToken) extends IamEvent
 
+case class UserStagedEvt(username: api.EMail, token: UserToken) extends IamEvent
+case class UserRegisteredEvt(user: User, token: UserToken) extends IamEvent
+
 object UserStaged {
   implicit val format: Format[UserStaged] = Json.format
 }
+
+object UserStagedEvt {
+  implicit val format: Format[UserStagedEvt] = Json.format
+}
+
+//object UserRegisteredEvt {
+//  implicit val format: Format[UserRegisteredEvt] = Json.format
+//}
