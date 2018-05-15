@@ -13,63 +13,44 @@ import mdpm.iam.api
 
 class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) extends StrictLogging {
 
-  private[es] var iamStagedUsersStatement: PreparedStatement = _
-  private[es] var iamUsersStatement: PreparedStatement = _
+//  private[es] var iamStagedUsersStatement: PreparedStatement = _
+  private[es] var iamStatement: PreparedStatement = _
 
   // create the tables used by the read side processor
   def createTable(): Future[Done] = {
     session.executeCreateTable(
-      """-- User `username` has been staged on `timestamp`
-        |-- with email token `stamp._1` which expires
-        |-- on `stamp._2`.
-        |
-        |CREATE TABLE IF NOT EXISTS iam.staged(
-        |username    text,
-        |u_timestamp timestamp,
-        |u_token     tuple<text,timestamp>,
-        |PRIMARY KEY (username)
-        |);
-        |
-        |-- WARNING: Get rid of temp workaround. Also, status and role fields haven't got a proper type
+      """-- WARNING: Get rid of temp workaround. Also, status and role fields haven't got a proper type
         |CREATE TABLE IF NOT EXISTS iam.users(
-        |username    text,
+        |username      text,
         |u_timestamp   timestamp,
         |u_status      int,
-        |forename    text,
-        |surname     text,
-        |password    text,
-        |role        int,
-        |u_token     tuple<text,timestamp>,
+        |forename      text,
+        |surname       text,
+        |password      text,
+        |role          int,
+        |u_token       tuple<text,timestamp>,
         |PRIMARY KEY (username)
         |);
       """.stripMargin)
 
   }
 
-
   def createPreparedStatements: Future[Done] = {
-    for {
-      insertStagedUser <- session.prepare(
-        """INSERT INTO
-          |staged(username, u_timestamp, u_token)
-          |VALUES (?, ?, ?)""".stripMargin
-      )
-      updateUser <- session.prepare(
-        """INSERT INTO users (username, u_timestamp, u_status, forename, surname, password, role, u_token)
-          |VALUES (?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
-      )
-    } yield {
-      iamStagedUsersStatement = insertStagedUser
-      iamUsersStatement= updateUser
+    session.prepare(
+      """INSERT INTO iam.users (username, u_timestamp, u_status, forename, surname, password, role, u_token)
+        |VALUES (?, ?, ?, ?, ?, ?, ?, ?)""".stripMargin
+    ).map {iamPreparedStatement =>
+      iamStatement = iamPreparedStatement
       Done
     }
+
   }
 
   def stageUser(e: UserStagedEvt): Future[List[BoundStatement]] =
     session.underlying().map { _session =>
       logger.debug(s"Read-side: Staging user (Event: $e)")
 
-      val iamBindStatement = iamStagedUsersStatement.bind()
+      val iamBindStatement = iamStatement.bind()
       val cluster = _session.getCluster
       val tupleType = cluster.getMetadata.newTupleType(DataType.text(), DataType.timestamp())
 
@@ -88,7 +69,7 @@ class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) ex
         case Right(pwd) => pwd
         case Left(mailToken) => mailToken.toString
       }
-      val iamBindStatement = iamUsersStatement.bind()
+      val iamBindStatement = iamStatement.bind()
       val cluster = _session.getCluster
       val tupleType = cluster.getMetadata.newTupleType(DataType.text(), DataType.timestamp())
       iamBindStatement.setString("username", regUser.user.username)
@@ -106,7 +87,7 @@ class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) ex
   def getUser(username: api.EMail): Future[Option[User]] =
     session.selectOne(
       s"""
-         |SELECT * FROM users
+         |SELECT * FROM iam.users
          | WHERE username = '$username'
        """.stripMargin
     ) map { _ map { row =>
@@ -114,37 +95,43 @@ class IamRepository(session: CassandraSession)(implicit ec: ExecutionContext) ex
       val timestamp = row.getTimestamp("u_timestamp")
       val forename = row.getString("forename")
       val surname = row.getString("surname")
+      val statusInt = row.getInt("u_status")
+      val status = statusInt match {
+        case 0 => Staged
+        case 1 => Active
+        case -1 => Inactive
+      }
 //      val tupleValue = row.getTupleValue("u_token")
 //      val token = tupleValue.getString(0)
 //      val expiration = tupleValue.getTimestamp(1).toInstant
       logger.debug(s"User(username = $username, forename=$forename)")
-      User(username, Staged, forename = Some(forename), surname = Some(surname), password = None)
+      User(username, status, forename = Some(forename), surname = Some(surname), password = None)
     } }
 
-  def updateUser(user: User, token: UserToken): Future[Done] = {
-
-    val statement =
-      s"""UPDATE users
-            (u_status, forename, surname, password, role, u_token)
-             SET u_status = ?, forename = ?, surname = ?, password = ?, role = ?, u_token = ?
-             WHERE username = ${user.username}
-        """.stripMargin
-
-
-    session.underlying().flatMap { _session =>
-      val cluster = _session.getCluster
-      val tupleType = cluster.getMetadata.newTupleType(DataType.text(), DataType.timestamp())
-
-      val upVals: AnyRef = List(user.status.value,
-        user.forename.orNull,
-        user.surname.orNull,
-        user.password.orNull,
-        user.role.map(_.value).getOrElse(0),
-        tupleType.newValue(token.token, new Timestamp(token.expiration.getTime))
-      )
-
-      session.executeWrite(statement,upVals)
-    }
-  }
+//  def updateUser(user: User, token: UserToken): Future[Done] = {
+//
+//    val statement =
+//      s"""UPDATE users
+//            (u_status, forename, surname, password, role, u_token)
+//             SET u_status = ?, forename = ?, surname = ?, password = ?, role = ?, u_token = ?
+//             WHERE username = ${user.username}
+//        """.stripMargin
+//
+//
+//    session.underlying().flatMap { _session =>
+//      val cluster = _session.getCluster
+//      val tupleType = cluster.getMetadata.newTupleType(DataType.text(), DataType.timestamp())
+//
+//      val upVals: AnyRef = List(user.status.value,
+//        user.forename.orNull,
+//        user.surname.orNull,
+//        user.password.orNull,
+//        user.role.map(_.value).getOrElse(0),
+//        tupleType.newValue(token.token, new Timestamp(token.expiration.getTime))
+//      )
+//
+//      session.executeWrite(statement,upVals)
+//    }
+//  }
 
 }
