@@ -12,7 +12,15 @@ case class User(
   surname : Option[String]                     = None,
   password: Option[Either[MailToken,Password]] = None,
   role    : Option[Role]                       = None
-)
+) {
+  def toUserInfo: UserInfo = {
+    UserInfo(
+      username = username,
+      forename = forename,
+      surname  = surname
+    )
+  }
+}
 
 case class UserInfo(
                  username: api.EMail,

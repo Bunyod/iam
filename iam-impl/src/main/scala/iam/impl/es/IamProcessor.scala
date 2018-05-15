@@ -20,10 +20,13 @@ class IamProcessor(session: CassandraSession, readSide: CassandraReadSide)(impli
 
   override def buildHandler(): ReadSideProcessor.ReadSideHandler[IamEvent] =
     readSide.builder[IamEvent]("iamEventOffset")
-//      .setGlobalPrepare(iamRepository.createTable _)
+      .setGlobalPrepare(iamRepository.createTable _)
       .setPrepare(_ => iamRepository.createPreparedStatements)
-//      .setEventHandler[UserStaged](e => iamRepository.stageUser(e.event))
-      .setEventHandler[UserStagedEvt](e => iamRepository.stageUser(e.event))
-//      .setEventHandler[UserRegisteredEvt](e => iamRepository.registerUser(e.event))
+      .setEventHandler[IamEvent] { e =>
+        e.event match {
+          case userStaged: UserStagedEvt => iamRepository.stageUser(userStaged)
+          case userRegistered: UserRegisteredEvt => iamRepository.registerUser(userRegistered)
+        }
+      }
       .build()
 }
