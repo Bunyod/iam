@@ -1,6 +1,6 @@
 # Identity and Access Management
 
-##User Registration 
+## User Registration 
 
 ### 1. Staging
 `curl -H "Content-Type: application/json"\
