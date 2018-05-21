@@ -96,8 +96,7 @@ lazy val `iam-impl` = (project in file("iam-impl"))
       scalaLogging,
       playJWT,
       scalaJWT,
-//      "com.mohiva" %% "play-silhouette" % "5.0.4",
-        lagomScaladslTestKit,
+      lagomScaladslTestKit,
       scalaTest
     ),
     dependencyOverrides ++= Seq(
